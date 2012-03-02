@@ -24,12 +24,18 @@ public class project {
 			Statement stmt2 = con.createStatement();
 			Statement stmt3 = con.createStatement();
 			Statement stmt4 = con.createStatement();
+			
 			try {
-				stmt.executeUpdate("create table TClosure(Origin char(32), Destination char(32), stops integer)");
-				stmt.executeUpdate("create table delta(origin char(32), destination char(32), stops integer)");
+
+				stmt.executeUpdate("create table TClosure(Origin char(32), Destination char(32), stops integer default 0)");
+				stmt.executeUpdate("create table delta(origin char(32), destination char(32), stops integer default 0)");
 			}
 			catch(SQLException e) {
+				stmt.executeUpdate("drop table TClosure");
+			stmt.executeUpdate("drop table delta");
 
+				stmt.executeUpdate("create table TClosure(Origin char(32), Destination char(32), stops integer default 0)");
+				stmt.executeUpdate("create table delta(origin char(32), destination char(32), stops integer default 0)");
 			}
 			stmt.executeUpdate("Insert into TClosure (Origin, Destination) SELECT * FROM " + args[2]);
 			stmt.executeUpdate("Insert into delta (Origin, Destination) SELECT * FROM " + args[2]);
@@ -38,22 +44,20 @@ public class project {
 			ResultSet counter = stmt3.executeQuery("SELECT count(*) as count from delta");
 			//stmt.executeUpdate("drop table TClosureold");
 
-			int i=0;
+
 			System.out.println("Before loop");
 			while(rset.next()) {
 				System.out.println("In while loop...");
 				try {
-					stmt.executeUpdate("create table TClosureold (Origin char(32), Destination char(32), stops integer)");
+					stmt.executeUpdate("create table TClosureold (Origin char(32), Destination char(32), stops integer default 0)");
 				}
 				catch(SQLException e) {}
-				stmt.executeUpdate("Insert into TClosureold (Origin, Destination) SELECT Origin, Destination FROM TClosure");
+				stmt.executeUpdate("Insert into TClosureold (Origin, Destination, stops) SELECT Origin, Destination, stops FROM TClosure");
+				stmt.executeUpdate("update delta set stops=(stops+1)");
 				stmt.executeUpdate("TRUNCATE TABLE TClosure");
-				stmt.executeUpdate("INSERT INTO TClosure (Origin, Destination) ((SELECT Origin, Destination from TClosureold) UNION (SELECT x.Origin, y.Destination from delta x, TClosureold y where x.Destination = y.Origin and x.Origin <> y.destination) UNION (SELECT x.Origin, y.Destination from TClosureold x, delta y where x.Destination = y.Origin and x.Origin <> y.Destination))");
+				stmt.executeUpdate("INSERT INTO TClosure (Origin, Destination, stops) ((SELECT Origin, Destination, stops from TClosureold) UNION (SELECT x.Origin, y.Destination, x.stops from delta x, TClosureold y where x.Destination = y.Origin and x.Origin <> y.destination) UNION (SELECT x.Origin, y.Destination, y.stops from TClosureold x, delta y where x.Destination = y.Origin and x.Origin <> y.Destination))");
 				stmt.executeUpdate("TRUNCATE table delta");
-				stmt.executeUpdate("Insert into delta (Origin, Destination) (SELECT T.Origin, T.Destination FROM TClosure T LEFT JOIN TClosureold Old ON Old.Origin = T.Origin AND Old.Destination = T.Destination and Old.Origin <> T.Destination)");
-				//stmt.executeUpdate("Insert into delta (Origin, Destination) values ('a', 'b')");
-				//rset.close();
-				//rset = stmt2.executeQuery("SELECT * from delta");
+				stmt.executeUpdate("Insert into delta (Origin, Destination, stops) (SELECT distinct T.Origin, T.Destination, T.stops FROM TClosure T LEFT JOIN TClosureold Old ON Old.Origin = T.Origin AND Old.Destination = T.Destination AND Old.Origin <> T.Destination)");
 				stmt.executeUpdate("drop table TClosureold");
 
 			}
