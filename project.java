@@ -46,7 +46,7 @@ public class project {
 					stmt.executeUpdate("create table TClosureold (Origin char(32), Destination char(32), stops integer)");
 				}
 				catch(SQLException e) {}
-				stmt.executeUpdate("Insert into TClosureold (Origin, Destination) SELECT * FROM " + args[2]);
+				stmt.executeUpdate("Insert into TClosureold (Origin, Destination) SELECT Origin, Destination FROM TClosure");
 				stmt.executeUpdate("TRUNCATE TABLE TClosure");
 				stmt.executeUpdate("INSERT INTO TClosure (Origin, Destination) ((SELECT Origin, Destination from TClosureold) UNION (SELECT x.Origin, y.Destination from delta x, TClosureold y where x.Destination = y.Origin and x.Origin <> y.destination) UNION (SELECT x.Origin, y.Destination from TClosureold x, delta y where x.Destination = y.Origin and x.Origin <> y.Destination))");
 				stmt.executeUpdate("TRUNCATE table delta");
