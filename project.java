@@ -26,13 +26,13 @@ public class project {
 			Statement stmt4 = con.createStatement();
 			try {
 				stmt.executeUpdate("create table TClosure(Origin char(32), Destination char(32), stops integer)");
-			stmt.executeUpdate("create table delta(origin char(32), destination char(32), stops integer)");
-		}
-		catch(SQLException e) {
+				stmt.executeUpdate("create table delta(origin char(32), destination char(32), stops integer)");
+			}
+			catch(SQLException e) {
 
-		}
-			stmt.executeUpdate("Insert into TClosure (Origin, Destination) SELECT * FROM Flights1");
-			stmt.executeUpdate("Insert into delta (Origin, Destination) SELECT * FROM Flights1");
+			}
+			stmt.executeUpdate("Insert into TClosure (Origin, Destination) SELECT * FROM " + args[2]);
+			stmt.executeUpdate("Insert into delta (Origin, Destination) SELECT * FROM " + args[2]);
 
 			ResultSet rset = stmt2.executeQuery("Select * from delta");
 			ResultSet counter = stmt3.executeQuery("SELECT count(*) as count from delta");
@@ -43,12 +43,12 @@ public class project {
 			while(rset.next()) {
 				System.out.println("In while loop...");
 				try {
-				stmt.executeUpdate("create table TClosureold (Origin char(32), Destination char(32), stops integer)");
-			}
-			catch(SQLException e) {}
+					stmt.executeUpdate("create table TClosureold (Origin char(32), Destination char(32), stops integer)");
+				}
+				catch(SQLException e) {}
 				stmt.executeUpdate("Insert into TClosureold (Origin, Destination) SELECT * FROM " + args[2]);
 				stmt.executeUpdate("TRUNCATE TABLE TClosure");
-				stmt.executeUpdate("INSERT INTO TClosure (Origin, Destination) ((SELECT Origin, Destination from TClosureold) UNION (SELECT x.Origin, y.Destination from delta x, TClosureold y where x.Destination = y.Origin) UNION (SELECT x.Origin, y.Destination from TClosureold x, delta y where x.Destination = y.Origin))");
+				stmt.executeUpdate("INSERT INTO TClosure (Origin, Destination) ((SELECT Origin, Destination from TClosureold) UNION (SELECT x.Origin, y.Destination from delta x, TClosureold y where x.Destination = y.Origin and x.Origin <> y.destination) UNION (SELECT x.Origin, y.Destination from TClosureold x, delta y where x.Destination = y.Origin and x.Origin <> y.Destination))");
 				stmt.executeUpdate("TRUNCATE table delta");
 				stmt.executeUpdate("Insert into delta (Origin, Destination) (SELECT T.Origin, T.Destination FROM TClosure T LEFT JOIN TClosureold Old ON Old.Origin = T.Origin AND Old.Destination = T.Destination and Old.Origin <> T.Destination)");
 				//stmt.executeUpdate("Insert into delta (Origin, Destination) values ('a', 'b')");
@@ -58,39 +58,39 @@ public class project {
 
 			}
 
-System.out.println("After Loop");
-ResultSet contents = stmt4.executeQuery("SELECT * from TClosure");
+			System.out.println("After Loop");
+			ResultSet contents = stmt4.executeQuery("SELECT * from TClosure ORDER BY Origin, Destination");
 			// Print the Origin and Destination columns
 			
-			   while (contents.next()) {
-			   System.out.print(contents.getString("Origin"));
-			   System.out.print("---");
-			   System.out.print(contents.getString("Destination"));
-			   System.out.print("---");
-			   System.out.println(contents.getString("stops"));
-			   }
-			   contents.close();
-			 
+			while (contents.next()) {
+				System.out.print(contents.getString("Origin"));
+				System.out.print("---");
+				System.out.print(contents.getString("Destination"));
+				System.out.print("---");
+				System.out.println(contents.getString("stops"));
+			}
+			contents.close();
+
 			// close the result set, statement
 
 			//rset.close();
-			   stmt.executeUpdate("drop table TClosure");
-			   stmt.executeUpdate("drop table delta");
-			   stmt.close();
-			} catch (SQLException e) {
-				throw new RuntimeException("There was a problem!", e);
-			} finally {
+			stmt.executeUpdate("drop table TClosure");
+			stmt.executeUpdate("drop table delta");
+			stmt.close();
+		} catch (SQLException e) {
+			throw new RuntimeException("There was a problem!", e);
+		} finally {
 			// I have to close the connection in the "finally" clause otherwise
 			// in case of an exception i would leave it open.
-				try {
-					if (con != null)
-						con.close();
-				} catch (SQLException e) {
-					throw new RuntimeException(
-						"Help! I could not close the connection!!!", e);
-				}
+			try {
+				if (con != null)
+					con.close();
+			} catch (SQLException e) {
+				throw new RuntimeException(
+					"Help! I could not close the connection!!!", e);
 			}
 		}
 	}
+}
 
 
